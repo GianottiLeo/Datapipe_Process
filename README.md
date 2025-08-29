@@ -7,16 +7,30 @@ This is a process to show how I would develop a robust and automated datapipe pr
 The main ideia of this project is to present a well documented datapipeline, following best pratices, ensuring governance over the process and good replicability as well. 
 
 ##
-
+## Azure
 
 <p align="center">
 <img width="12" />
-<img src="https://github.com/GianottiLeo/Power-Shell-PBI-API/assets/164948682/6c2d7490-d5da-40e7-a4fc-1dc56038c699" height="300" alt="powerbi logo" width ="530"  />
-
+<img src="Azure.png" height="600" alt="powerbi logo" width ="900"  />
 
 ##
-
+## DBT
 
 <p align="center">
 <img width="12" />
-<img src="https://github.com/GianottiLeo/Power-Shell-PBI-API/assets/164948682/8e331fab-b11c-4f76-8b04-abf5bde37397" height="260" alt="powerbi logo" width ="180"  />
+<img src="dbt.png" height="1600" alt="powerbi logo" width ="400"  />
+
+##
+## Snowflake
+
+<p align="center">
+<img width="12" />
+<img src="snowflake.png" height="1600" alt="powerbi logo" width ="400"  />
+  
+##
+## Looker
+
+<p align="center">
+<img width="12" />
+<img src="Captura de tela 2025-08-28 213337.png" height="600" alt="powerbi logo" width ="900"  />
+
