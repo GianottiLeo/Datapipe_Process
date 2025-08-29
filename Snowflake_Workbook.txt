@@ -1,0 +1,265 @@
+-- Create a storage integration object to integrate with Azure Storage Account (create in Azure)
+CREATE STORAGE INTEGRATION snow_azure_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = AZURE
+  ENABLED = TRUE
+  AZURE_TENANT_ID = 'bd8320ac-6f92-4a4e-8689-e0516aa0b6ec' // From microsoft entra ID (Azure)
+  STORAGE_ALLOWED_LOCATIONS = ('azure://practicesnow222.blob.core.windows.net/container', 'azure://snowazureintg22.blob.core.windows.net/snowazurefiles'); // URLs from container properties in Storage Account 
+  
+-- Describe integration object to get parameters
+DESC STORAGE INTEGRATION snow_azure_int;
+-- Click on Consent URL and Add Multi Tenant App Name as Role Assigment in Acess Control IAM (remove numbers)
+
+// Create database and schema
+CREATE DATABASE IF NOT EXISTS MYDB;
+CREATE SCHEMA IF NOT EXISTS MYDB.file_formats;
+CREATE SCHEMA IF NOT EXISTS MYDB.external_stages;
+
+// Create file format object
+CREATE OR REPLACE file format mydb.file_formats.csv_fileformat
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    empty_field_as_null = TRUE;    
+
+// All files in container
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont_all_files
+    URL = 'azure://practicesnow222.blob.core.windows.net/container'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat ;
+
+//Listing files under your azure containers
+list @mydb.external_stages.stg_azure_cont_all_files;
+-- Copy these and create the folliwing steps changing URL
+
+// Create stage object with integration object & file format object --clientes
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/clientes_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat ;
+
+// Create a table first
+CREATE OR REPLACE TABLE CLIENTES (
+    id_clientes NUMBER PRIMARY KEY,
+    cliente VARCHAR(255),
+    endereco VARCHAR(255),
+    nro_endereco VARCHAR(255),
+    id_concessionarias VARCHAR(255),
+    data_inclusao TIMESTAMP_NTZ,
+    data_atualizacao TIMESTAMP_NTZ
+    );
+
+// Use Copy command to load the files
+COPY INTO MYDB.EXTERNAL_STAGES.CLIENTES
+    FROM @mydb.external_stages.stg_azure_cont
+    files = 'clientes_202508151117.csv';
+    --PATTERN = '.*customer.*'
+    ;    
+
+// Create stage object with integration object & file format object --cidades
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/cidades_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat ;
+
+// Create a table first
+CREATE OR REPLACE TABLE CIDADES (
+    id_cidades NUMBER(38, 0) PRIMARY KEY,
+    cidade VARCHAR(255),
+    id_estados NUMBER(38, 0),
+    data_inclusao TIMESTAMP_NTZ(9),
+    data_atualizacao TIMESTAMP_NTZ(9)
+);
+
+// Use Copy command to load the files
+COPY INTO MYDB.EXTERNAL_STAGES.CIDADES
+    FROM @mydb.external_stages.stg_azure_cont
+    --PATTERN = '.*customer.*'
+    ;    
+
+// Create stage object with integration object & file format object --CATEGORIES
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/categories_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat ;
+
+CREATE OR REPLACE TABLE CATEGORIES (
+    id NUMBER(38, 0) PRIMARY KEY,
+    name VARCHAR(255),
+    parent_id NUMBER(38, 0)
+);
+
+// Use Copy command to load the files
+COPY INTO MYDB.EXTERNAL_STAGES.CATEGORIES
+    FROM @mydb.external_stages.stg_azure_cont_all_files
+    pattern = '*categories*' 
+    --PATTERN = '.*customer.*'
+    ;    
+LIST @mydb.external_stages.stg_azure_cont
+LIST @mydb.external_stages.stg_azure_cont_all_files
+    
+// Create all other tables
+-- Table: clima_sp
+CREATE OR REPLACE TABLE clima_sp (
+    data_hora TIMESTAMP,
+    cidade STRING,
+    temperatura FLOAT,
+    temp_min FLOAT,
+    temp_max FLOAT,
+    umidade FLOAT,
+    pressao FLOAT,
+    descricao STRING
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/clima_sp_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.clima_sp
+    FROM @mydb.external_stages.stg_azure_cont; 
+    
+-- Table: concessionarias
+CREATE OR REPLACE TABLE concessionarias (
+    id_concessionarias INT,
+    concessionaria STRING,
+    id_cidades INT,
+    data_inclusao TIMESTAMP_TZ,
+    data_atualizacao TIMESTAMP_TZ
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/concessionarias_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.concessionarias
+    FROM @mydb.external_stages.stg_azure_cont; 
+  
+-- Table: employees
+CREATE OR REPLACE TABLE employees (
+    id INT,
+    name STRING,
+    manager_id INT,
+    department STRING,
+    salary FLOAT
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/employees_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.employees
+    FROM @mydb.external_stages.stg_azure_cont; 
+  
+-- Table: estados
+CREATE OR REPLACE TABLE estados (
+    id_estados INT,
+    estado STRING,
+    sigla STRING,
+    data_inclusao TIMESTAMP_TZ,
+    data_atualizacao TIMESTAMP_TZ
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/estados_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.estados
+    FROM @mydb.external_stages.stg_azure_cont; 
+
+SELECT * FROM ESTADOS
+  
+-- Table: order_items
+CREATE OR REPLACE TABLE order_items (
+    id INT,
+    order_id INT,
+    product_name STRING,
+    quantity INT,
+    price FLOAT
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/order_items_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.order_items
+    FROM @mydb.external_stages.stg_azure_cont; 
+
+-- Table: orders
+CREATE OR REPLACE TABLE orders (
+    id INT,
+    customer_name STRING,
+    order_date DATE,
+    total_amount FLOAT
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/orders_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.orders
+    FROM @mydb.external_stages.stg_azure_cont; 
+
+-- Table: veiculos
+CREATE OR REPLACE TABLE veiculos (
+    id_veiculos INT,
+    nome STRING,
+    tipo STRING,
+    valor FLOAT,
+    data_atualizacao TIMESTAMP_TZ,
+    data_inclusao TIMESTAMP_TZ
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/veiculos_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.veiculos
+    FROM @mydb.external_stages.stg_azure_cont; 
+
+    -- Table: vendas
+CREATE OR REPLACE TABLE vendas (
+    id_vendas INT,
+    id_veiculos INT,
+    id_concessionarias INT,
+    id_vendedores INT,
+    id_clientes INT,
+    valor_pago FLOAT,
+    data_venda TIMESTAMP_TZ,
+    data_inclusao TIMESTAMP_TZ,
+    data_atualizacao TIMESTAMP_TZ
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/vendas_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.vendas
+    FROM @mydb.external_stages.stg_azure_cont; 
+
+-- Table: vendedores
+CREATE OR REPLACE TABLE vendedores (
+    id_vendedores INT,
+    nome STRING,
+    id_concessionarias INT,
+    data_inclusao TIMESTAMP_TZ,
+    data_atualizacao TIMESTAMP_TZ
+);
+
+CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
+    URL = 'azure://practicesnow222.blob.core.windows.net/container/vendedores_202508151117.csv'
+    STORAGE_INTEGRATION = snow_azure_int
+    FILE_FORMAT = mydb.file_formats.csv_fileformat;
+
+COPY INTO MYDB.EXTERNAL_STAGES.vendedores
+    FROM @mydb.external_stages.stg_azure_cont; 
+
+SELECT * FROM LEO.PUBLIC.CIDADES
