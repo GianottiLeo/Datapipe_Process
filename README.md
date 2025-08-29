@@ -9,12 +9,16 @@ The main ideia of this project is to present a well documented datapipeline, fol
 ##
 ## Azure
 
+Using the .csv example files I found in a Udemy Course, I created a Storage Account and a Container (showed in the image bellow) to store all the raw datasources. After this setup, it was also necessary to set the permissions in snowflake to configure the connection between both tools, allowing the ingesting of raw data into my datawarehouse of choice, snowflake in this case.
+
 <p align="center">
 <img width="12" />
 <img src="Azure.png" height="600" alt="powerbi logo" width ="900"  />
 
 ##
 ## DBT
+
+All the data transformations that made sense, and that in this example, would`ve been requested by the users, were done setting dim, fact and analytical tables and folders in DBT.
 
 <p align="center">
 <img width="12" />
@@ -23,12 +27,16 @@ The main ideia of this project is to present a well documented datapipeline, fol
 ##
 ## Snowflake
 
+Besides the connection to Azure and the table storage (with all tables being created in DBT), there`s no major process being done in Snowflake.
+
 <p align="center">
 <img width="12" />
 <img src="snowflake.png" height="1600" alt="powerbi logo" width ="400"  />
   
 ##
 ## Looker
+
+Here`s the dashboard developed using one of the analytical tables, in Looker.
 
 <p align="center">
 <img width="12" />
