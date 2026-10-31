@@ -1,0 +1,15 @@
+# Copy to ~/.dbt/profiles.yml and fill in with your Snowflake credentials.
+# Never commit the real file.
+novadrive:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE') }}"
+      database: MYDB
+      schema: dbt_dev
+      threads: 4

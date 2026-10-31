@@ -262,4 +262,4 @@ CREATE OR REPLACE STAGE mydb.external_stages.stg_azure_cont
 COPY INTO MYDB.EXTERNAL_STAGES.vendedores
     FROM @mydb.external_stages.stg_azure_cont; 
 
-SELECT * FROM LEO.PUBLIC.CIDADES
+SELECT * FROM MYDB.EXTERNAL_STAGES.CIDADES

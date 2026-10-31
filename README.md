@@ -1,44 +1,92 @@
-# Datapipe Process 
+# NovaDrive: Azure → Snowflake → dbt → Looker
 
-This is a process to show how I would develop a robust and automated datapipe process using Azure Data Factory to ingest and orchestrate data, Snowflake as my datawarehouse, DBT to transform the data, and Looker to visualize que results.
+An end-to-end ELT pipeline for a fictional car dealership network (**NovaDrive**). Raw CSV extracts land in Azure Blob Storage, are loaded into Snowflake through an external stage, are modeled with dbt into a tested star schema, and are served to a Looker dashboard.
 
-##
+![Snowflake](https://img.shields.io/badge/Snowflake-29B5E8?logo=snowflake&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=white)
+![Azure](https://img.shields.io/badge/Azure%20Blob%20Storage-0078D4?logo=microsoftazure&logoColor=white)
+![Looker](https://img.shields.io/badge/Looker-4285F4?logo=looker&logoColor=white)
+![SQL](https://img.shields.io/badge/SQL-336791?logo=postgresql&logoColor=white)
 
-The main ideia of this project is to present a well documented datapipeline, following best pratices, ensuring governance over the process and good replicability as well. 
+## Architecture
 
-##
-## Azure
+```mermaid
+flowchart LR
+    A[CSV extracts] --> B[Azure Blob Storage<br/>container]
+    B -- storage integration +<br/>external stage --> C[(Snowflake<br/>raw tables)]
+    C --> D[dbt staging<br/>views]
+    D --> E[dbt marts<br/>dims + incremental fact]
+    E --> F[dbt analytics<br/>aggregates]
+    F --> G[Looker dashboard]
+```
 
-Using the .csv example files I found in a Udemy Course, I created a Storage Account and a Container (showed in the image bellow) to store all the raw datasources. After this setup, it was also necessary to set the permissions in snowflake to configure the connection between both tools, allowing the ingesting of raw data into my datawarehouse of choice, snowflake in this case.
+| Layer | Tool | What happens |
+|---|---|---|
+| Landing | Azure Blob Storage | Raw CSVs (sales, customers, vehicles, dealerships, salespeople, cities, states) stored in a container |
+| Ingestion | Snowflake | Storage integration + external stage + `COPY INTO` load raw tables ([`snowflake/setup.sql`](snowflake/setup.sql)) |
+| Staging | dbt (views) | Renaming, typing (`DECIMAL(10,2)`), `INITCAP` cleanup, `COALESCE` for missing update timestamps |
+| Marts | dbt (tables) | Star schema: 6 dimensions + `fct_vendas`, built **incrementally** on `data_atualizacao` |
+| Analytics | dbt (tables) | Pre-aggregated tables by dealership, salesperson, vehicle and month |
+| Serving | Looker | Dashboard on top of the analytics layer |
 
-<p align="center">
-<img width="12" />
-<img src="Azure.png" height="600" alt="powerbi logo" width ="900"  />
+## Data model
 
-##
-## DBT
+```mermaid
+erDiagram
+    fct_vendas }o--|| dim_veiculos : veiculo_id
+    fct_vendas }o--|| dim_clientes : cliente_id
+    fct_vendas }o--|| dim_vendedores : vendedor_id
+    fct_vendas }o--|| dim_concessionarias : concessionaria_id
+    dim_concessionarias }o--|| dim_cidades : cidade_id
+    dim_cidades }o--|| dim_estados : estado_id
+```
 
-All the data transformations that made sense, and that in this example, would`ve been requested by the users, were done setting dim, fact and analytical tables and folders in DBT.
+## Data quality
 
-<p align="center">
-<img width="12" />
-<img src="dbt.png" height="1600" alt="powerbi logo" width ="400"  />
+- **Generic tests** on every model: `unique` / `not_null` primary keys and `relationships` from the fact to each dimension ([`_staging.yml`](models/staging/_staging.yml), [`_marts.yml`](models/marts/_marts.yml)).
+- **Business-rule test**: [`assert_sale_price_within_suggested_range`](tests/assert_sale_price_within_suggested_range.sql) flags any sale above the suggested price or more than 5% below it.
+- **Referential integrity by design**: the fact uses inner joins to every dimension, so orphan sales never reach reporting.
 
-##
-## Snowflake
+## Project structure
 
-Besides the connection to Azure and the table storage (with all tables being created in DBT), there`s no major process being done in Snowflake.
+```
+├── dbt_project.yml
+├── models/
+│   ├── staging/            # stg_* views + sources
+│   └── marts/
+│       ├── dimensions/     # dim_* tables
+│       ├── facts/          # fct_vendas (incremental)
+│       └── analysis/       # analise_vendas_* aggregates
+├── tests/                  # singular business-rule tests
+├── snowflake/setup.sql     # storage integration, stages, raw tables, COPY INTO
+└── docs/images/
+```
 
-<p align="center">
-<img width="12" />
-<img src="snowflake.png" height="1600" alt="powerbi logo" width ="400"  />
-  
-##
-## Looker
+## Running it
 
-Here`s the dashboard developed using one of the analytical tables, in Looker.
+```bash
+pip install dbt-snowflake
+cp profiles.example.yml ~/.dbt/profiles.yml   # then set the SNOWFLAKE_* env vars
+dbt build                                      # runs models and tests in DAG order
+```
 
-<p align="center">
-<img width="12" />
-<img src="Captura de tela 2025-08-28 213337.png" height="600" alt="powerbi logo" width ="900"  />
+Run [`snowflake/setup.sql`](snowflake/setup.sql) first to create the storage integration, stages and raw tables (replace the `<placeholders>` with your Azure tenant and storage account).
 
+## Screenshots
+
+| Azure container | dbt project | Snowflake objects |
+|---|---|---|
+| ![Azure Blob container with raw CSV files](docs/images/azure-blob-container.png) | ![dbt project tree](docs/images/dbt-project-tree.png) | ![Snowflake database objects](docs/images/snowflake-objects.png) |
+
+### Dashboard
+
+![Looker dashboard built on the analytics layer](docs/images/looker-dashboard.png)
+
+<!-- TODO: replace with the redesigned Looker dashboard screenshot -->
+
+## Related
+
+- [CI-CD](https://github.com/GianottiLeo/CI-CD): GitHub Actions pipeline that tests and deploys dbt models to Snowflake dev/prod.
+
+---
+*Sample CSVs come from a Udemy course dataset; all names are fictional. The dbt project was originally developed in [NovaDrive](https://github.com/GianottiLeo/NovaDrive) and consolidated here.*

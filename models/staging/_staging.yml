@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: stg_vendas
+    description: "Sales transactions, cleaned and typed. One row per sale."
+    columns:
+      - name: id_vendas
+        tests: [unique, not_null]
+  - name: stg_clientes
+    description: "Customers."
+    columns:
+      - name: id_clientes
+        tests: [unique, not_null]
+  - name: stg_veiculos
+    description: "Vehicle catalog with suggested retail price."
+    columns:
+      - name: id_veiculos
+        tests: [unique, not_null]
+  - name: stg_concessionarias
+    description: "Dealerships."
+    columns:
+      - name: id_concessionarias
+        tests: [unique, not_null]
+  - name: stg_vendedores
+    description: "Salespeople."
+    columns:
+      - name: id_vendedores
+        tests: [unique, not_null]
+  - name: stg_cidades
+    description: "Cities."
+    columns:
+      - name: id_cidades
+        tests: [unique, not_null]
+  - name: stg_estados
+    description: "Brazilian states."
+    columns:
+      - name: id_estados
+        tests: [unique, not_null]

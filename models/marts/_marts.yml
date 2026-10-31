@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: fct_vendas
+    description: >
+      Sales fact table (star schema), built incrementally on data_atualizacao.
+      Inner joins to every dimension keep orphan sales out of the fact.
+    columns:
+      - name: venda_id
+        tests: [unique, not_null]
+      - name: veiculo_id
+        tests:
+          - relationships: {to: ref('dim_veiculos'), field: veiculo_id}
+      - name: concessionaria_id
+        tests:
+          - relationships: {to: ref('dim_concessionarias'), field: concessionaria_id}
+      - name: vendedor_id
+        tests:
+          - relationships: {to: ref('dim_vendedores'), field: vendedor_id}
+      - name: cliente_id
+        tests:
+          - relationships: {to: ref('dim_clientes'), field: cliente_id}
+
+  - name: dim_veiculos
+    columns:
+      - name: veiculo_id
+        tests: [unique, not_null]
+  - name: dim_clientes
+    columns:
+      - name: cliente_id
+        tests: [unique, not_null]
+  - name: dim_concessionarias
+    columns:
+      - name: concessionaria_id
+        tests: [unique, not_null]
+  - name: dim_vendedores
+    columns:
+      - name: vendedor_id
+        tests: [unique, not_null]
+  - name: dim_cidades
+    columns:
+      - name: cidade_id
+        tests: [unique, not_null]
+  - name: dim_estados
+    columns:
+      - name: estado_id
+        tests: [unique, not_null]
+
+  - name: analise_vendas_concessionaria
+    description: "Sales count, revenue and average ticket by dealership, city and state."
+  - name: analise_vendas_temporal
+    description: "Monthly sales count, revenue and average ticket."
+  - name: analise_vendas_veiculo
+    description: "Sales by vehicle model vs. suggested price."
+  - name: analise_vendas_vendedor
+    description: "Sales performance by salesperson."
