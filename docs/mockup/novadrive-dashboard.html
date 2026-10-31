@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NovaDrive Sales Performance</title>
+<style>
+  :root {
+    --canvas: #f3f2ef;
+    --surface-1: #fcfcfb;
+    --border: #e4e2dd;
+    --grid: #ebe9e4;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #85837d;
+    --series-1: #2a78d6;
+    --seq-150: #b7d3f6;
+    --seq-300: #6da7ec;
+    --seq-550: #1c5cab;
+    --good: #0ca30c;
+    --critical: #d03b3b;
+    --brand: #0f1d33;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1600px; height: 960px; background: var(--canvas); font: 13px/1.35 "Segoe UI", system-ui, sans-serif; color: var(--text-primary); overflow: hidden; display: flex; flex-direction: column; }
+  .top { background: var(--brand); color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 18px; }
+  .logo { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #3987e5, #1c5cab); display: grid; place-items: center; font-weight: 800; font-size: 15px; letter-spacing: -.5px; }
+  .top h1 { font-size: 18px; font-weight: 650; }
+  .top .sub { color: #9fb0c5; font-size: 12px; }
+  .top .filters { margin-left: auto; display: flex; gap: 8px; }
+  .chip { background: #1b2c47; border: 1px solid #2b3f5f; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #b9c6d8; }
+  .chip b { color: #fff; font-weight: 600; }
+  main { flex: 1; padding: 16px 24px 14px; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .row { display: grid; gap: 14px; min-height: 0; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; }
+  .card h2 { font-size: 13.5px; font-weight: 600; }
+  .hint { color: var(--text-muted); font-size: 11.5px; margin-top: 1px; }
+  .kpi .label { color: var(--text-secondary); font-size: 12px; }
+  .kpi .value { font-size: 30px; font-weight: 650; margin-top: 4px; letter-spacing: -.5px; }
+  .kpi .delta { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  .up { color: #186d18; font-weight: 600; } .down { color: #a82c2c; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  th { text-align: left; color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .3px; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 6.5px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar-cell { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .bar-cell span { display: inline-block; height: 6px; border-radius: 3px; background: var(--seq-300); }
+  .rank { color: var(--text-muted); width: 18px; }
+  .foot { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 11px; padding: 0 2px; }
+  svg text { font-family: "Segoe UI", system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">ND</div>
+  <div><h1>NovaDrive Motors · Sales performance</h1><div class="sub">Built on the dbt analytics layer: analise_vendas_temporal · _concessionaria · _veiculo · _vendedor</div></div>
+  <div class="filters"><div class="chip">Period <b>Jan 2023 – Dec 2024</b></div><div class="chip">State <b>All</b></div><div class="chip">Dealership <b>All</b></div><div class="chip">Vehicle type <b>All</b></div></div>
+</div>
+<main>
+  <div class="row" style="grid-template-columns: repeat(5, 1fr)">
+    <div class="card kpi"><div class="label">Total revenue</div><div class="value">R$ 2.20 bi</div><div class="delta"><span class="up">▲ 14.2%</span> vs. previous 12 months</div></div>
+    <div class="card kpi"><div class="label">Units sold</div><div class="value">6,512</div><div class="delta"><span class="up">▲ 9.8%</span> vs. previous 12 months</div></div>
+    <div class="card kpi"><div class="label">Average ticket</div><div class="value">R$ 338k</div><div class="delta"><span class="up">▲ 4.0%</span> mix shift toward SUVs</div></div>
+    <div class="card kpi"><div class="label">Sales within price policy</div><div class="value">96.4%</div><div class="delta">≤ 5% below suggested price · dbt test</div></div>
+    <div class="card kpi"><div class="label">Active dealerships</div><div class="value">53</div><div class="delta">212 salespeople</div></div>
+  </div>
+
+  <div class="row" style="grid-template-columns: 1.6fr 1fr; flex: 1">
+    <div class="card">
+      <h2>Monthly revenue</h2><div class="hint">R$ millions · analise_vendas_temporal</div>
+      <svg id="trend" width="100%" style="flex:1"></svg>
+    </div>
+    <div class="card">
+      <h2>Revenue by state</h2><div class="hint">Top 10 states · R$ millions</div>
+      <svg id="states" width="100%" style="flex:1"></svg>
+    </div>
+  </div>
+
+  <div class="row" style="grid-template-columns: 1.25fr 1fr 1fr; flex: 1.05">
+    <div class="card">
+      <h2>Top dealerships</h2><div class="hint">Ranked by revenue · analise_vendas_concessionaria</div>
+      <table id="dealers"></table>
+    </div>
+    <div class="card">
+      <h2>Vehicle mix</h2><div class="hint">Units sold and average discount vs. suggested price</div>
+      <svg id="vehicles" width="100%" style="flex:1"></svg>
+    </div>
+    <div class="card">
+      <h2>Top salespeople</h2><div class="hint">Revenue · analise_vendas_vendedor</div>
+      <svg id="sellers" width="100%" style="flex:1"></svg>
+    </div>
+  </div>
+  <div class="foot"><span>Design mockup. Headline totals match the course's sample dataset; breakdowns are illustrative.</span><span>Snowflake · dbt · Looker Studio</span></div>
+</main>
+
+<script>
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS = 'http://www.w3.org/2000/svg';
+function el(svg, tag, attrs, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; svg.appendChild(e); return e; }
+function size(svg) { const r = svg.getBoundingClientRect(); return [r.width, r.height]; }
+function barV(x, y, w, h, r = 3) { r = Math.min(r, h, w / 2); return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; }
+function barH(x, y, w, h, r = 3) { r = Math.min(r, w, h / 2); return `M${x},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h - r}Q${x + w},${y + h} ${x + w - r},${y + h}H${x}Z`; }
+const fmt = v => v.toLocaleString('en-US');
+
+// Monthly revenue, 24 months, sums to ~2,200
+(function () {
+  const svg = document.getElementById('trend'); const [W, H] = size(svg);
+  const raw = [62, 58, 71, 74, 79, 76, 83, 88, 84, 91, 97, 118, 78, 75, 86, 92, 95, 97, 104, 108, 101, 112, 121, 141];
+  const s = 2200 / raw.reduce((a, b) => a + b); const data = raw.map(v => v * s);
+  const m = { l: 40, r: 8, t: 18, b: 24 }, n = data.length, max = 160, iw = W - m.l - m.r, ih = H - m.t - m.b, bw = iw / n;
+  [0, 40, 80, 120, 160].forEach(v => { const y = m.t + ih - v / max * ih; el(svg, 'line', { x1: m.l, x2: W - m.r, y1: y, y2: y, stroke: css('--grid') }); el(svg, 'text', { x: m.l - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 10.5, fill: css('--text-muted') }, v); });
+  const mon = 'JFMAMJJASOND';
+  data.forEach((v, i) => { const h = v / max * ih; el(svg, 'path', { d: barV(m.l + i * bw + 2, m.t + ih - h, bw - 4, h), fill: i >= 12 ? css('--series-1') : css('--seq-150') });
+    el(svg, 'text', { x: m.l + i * bw + bw / 2, y: H - 8, 'text-anchor': 'middle', 'font-size': 10, fill: css('--text-muted') }, mon[i % 12]); });
+  el(svg, 'line', { x1: m.l + 12 * bw, x2: m.l + 12 * bw, y1: m.t - 6, y2: m.t + ih, stroke: css('--border') });
+  el(svg, 'text', { x: m.l + 6 * bw, y: m.t - 5, 'text-anchor': 'middle', 'font-size': 11, fill: css('--text-secondary') }, '2023 · R$ 1.03 bi');
+  el(svg, 'text', { x: m.l + 18 * bw, y: m.t - 5, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: css('--text-primary') }, '2024 · R$ 1.17 bi');
+  const last = data[n - 1]; el(svg, 'text', { x: m.l + (n - 0.5) * bw, y: m.t + ih - last / max * ih - 6, 'text-anchor': 'end', 'font-size': 11, 'font-weight': 600, fill: css('--text-primary') }, `Dec: ${Math.round(last)}`);
+})();
+
+// Revenue by state (from the original dashboard)
+(function () {
+  const svg = document.getElementById('states'); const [W, H] = size(svg);
+  const d = [['São Paulo', 328], ['Minas Gerais', 210], ['Rio de Janeiro', 208], ['Bahia', 172], ['Paraná', 99], ['Rio Grande do Sul', 98], ['Ceará', 62], ['Santa Catarina', 57], ['Espírito Santo', 56], ['Rio Grande do Norte', 55]];
+  const lw = 128, rw = 40, gap = 5, bh = (H - 8 - gap * d.length) / d.length, max = 330;
+  d.forEach(([k, v], i) => { const y = 6 + i * (bh + gap), w = v / max * (W - lw - rw);
+    el(svg, 'text', { x: lw - 10, y: y + bh / 2 + 4, 'text-anchor': 'end', 'font-size': 12, fill: css('--text-secondary') }, k);
+    el(svg, 'path', { d: barH(lw, y, w, bh), fill: css('--series-1') });
+    el(svg, 'text', { x: lw + w + 6, y: y + bh / 2 + 4, 'font-size': 11.5, fill: css('--text-primary') }, v); });
+})();
+
+// Dealers table
+(function () {
+  const rows = [['NovaDrive Paulista', 'São Paulo, SP', 412, 141.2], ['NovaDrive Savassi', 'Belo Horizonte, MG', 318, 108.9], ['NovaDrive Barra', 'Rio de Janeiro, RJ', 305, 104.6], ['NovaDrive Pituba', 'Salvador, BA', 262, 87.3], ['NovaDrive Campinas', 'Campinas, SP', 241, 82.0], ['NovaDrive Batel', 'Curitiba, PR', 152, 50.8], ['NovaDrive Moinhos', 'Porto Alegre, RS', 148, 49.6]];
+  let h = '<tr><th></th><th>Dealership</th><th>City</th><th class="num">Units</th><th class="num">Revenue (R$ mi)</th></tr>';
+  rows.forEach(([n, c, u, r], i) => h += `<tr><td class="rank">${i + 1}</td><td><b>${n}</b></td><td style="color:var(--text-secondary)">${c}</td><td class="num">${u}</td><td class="num"><div class="bar-cell"><span style="width:${r / 141.2 * 70}px"></span>${r.toFixed(1)}</div></td></tr>`);
+  document.getElementById('dealers').innerHTML = h;
+})();
+
+// Vehicle mix: units bars + discount label
+(function () {
+  const svg = document.getElementById('vehicles'); const [W, H] = size(svg);
+  const d = [['Nova Terra (SUV)', 1874, 2.1], ['Nova Urbe (hatch)', 1532, 3.4], ['Nova Sedan', 1206, 2.8], ['Nova Carga (pickup)', 988, 1.6], ['Nova Volt (EV)', 912, 0.9]];
+  const lw = 128, rw = 92, top = 18, gap = 9, bh = (H - top - 4 - gap * d.length) / d.length, max = 1874;
+  el(svg, 'text', { x: W - 2, y: 10, 'text-anchor': 'end', 'font-size': 10.5, fill: css('--text-muted') }, 'avg. discount');
+  d.forEach(([k, u, disc], i) => { const y = top + i * (bh + gap), w = u / max * (W - lw - rw);
+    el(svg, 'text', { x: lw - 10, y: y + bh / 2 + 4, 'text-anchor': 'end', 'font-size': 12, fill: css('--text-secondary') }, k);
+    el(svg, 'path', { d: barH(lw, y, w, bh), fill: css('--series-1') });
+    el(svg, 'text', { x: lw + w + 6, y: y + bh / 2 + 4, 'font-size': 11.5, fill: css('--text-primary') }, fmt(u));
+    el(svg, 'text', { x: W - 2, y: y + bh / 2 + 4, 'text-anchor': 'end', 'font-size': 11.5, fill: css('--text-secondary') }, `−${disc.toFixed(1)}%`); });
+})();
+
+// Top salespeople: lollipop
+(function () {
+  const svg = document.getElementById('sellers'); const [W, H] = size(svg);
+  const d = [['Ana Ribeiro', 'Paulista', 21.4], ['Bruno Costa', 'Savassi', 19.8], ['Carla Mendes', 'Barra', 18.9], ['Diego Alves', 'Paulista', 17.6], ['Elisa Rocha', 'Pituba', 16.2], ['Felipe Nunes', 'Campinas', 15.1]];
+  const lw = 150, rw = 40, top = 8, rowH = (H - top) / d.length, max = 22, sx = v => lw + v / max * (W - lw - rw);
+  d.forEach(([n, dl, v], i) => { const y = top + i * rowH + rowH / 2;
+    el(svg, 'text', { x: 0, y: y - 1, 'font-size': 12, 'font-weight': 600, fill: css('--text-primary') }, n);
+    el(svg, 'text', { x: 0, y: y + 13, 'font-size': 11, fill: css('--text-muted') }, dl);
+    el(svg, 'line', { x1: lw, x2: sx(v), y1: y + 2, y2: y + 2, stroke: css('--seq-150'), 'stroke-width': 2 });
+    el(svg, 'circle', { cx: sx(v), cy: y + 2, r: 5.5, fill: css('--series-1'), stroke: css('--surface-1'), 'stroke-width': 2 });
+    el(svg, 'text', { x: W - 2, y: y + 6, 'text-anchor': 'end', 'font-size': 11.5, fill: css('--text-primary') }, v.toFixed(1)); });
+  el(svg, 'text', { x: W - 2, y: H - 1, 'text-anchor': 'end', 'font-size': 10, fill: css('--text-muted') }, 'R$ mi');
+})();
+</script>
+</body>
+</html>

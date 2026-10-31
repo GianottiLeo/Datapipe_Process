@@ -80,9 +80,9 @@ Run [`snowflake/setup.sql`](snowflake/setup.sql) first to create the storage int
 
 ### Dashboard
 
-![Looker dashboard built on the analytics layer](docs/images/looker-dashboard.png)
+![Sales performance dashboard: revenue, units, average ticket and price-policy KPIs, monthly revenue, revenue by state, top dealerships, vehicle mix and top salespeople](docs/images/dashboard.png)
 
-<!-- TODO: replace with the redesigned Looker dashboard screenshot -->
+> **Design mockup.** Each panel maps to one dbt analytics model (`analise_vendas_temporal`, `_concessionaria`, `_veiculo`, `_vendedor`), and the "sales within price policy" KPI comes from the business-rule test. Headline totals match the sample dataset; the breakdowns are illustrative. Source: [`docs/mockup/novadrive-dashboard.html`](docs/mockup/novadrive-dashboard.html).
 
 ## Related
 
